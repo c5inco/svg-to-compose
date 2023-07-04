@@ -44,6 +44,7 @@ class AllIconAccessorGenerator(
         val allIconProperty = PropertySpec.builder(allAssetsPropertyName, allIconsType)
             .receiver(accessClass)
             .getter(FunSpec.getterBuilder().withBackingProperty(allIconsBackingProperty) {
+                addAnnotation(AnnotationSpec.builder(ClassNames.Composable).build())
                 addStatement(
                     "%N= ${if(childGroups.isNotEmpty()) "$childGroupsParameters + " else ""}listOf$parameters",
                     allIconsBackingProperty,

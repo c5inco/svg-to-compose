@@ -57,7 +57,7 @@ class VectorAssetGenerator(
         // for resolution, regardless of the access modifier, so by using unique names we reduce
         // the size from ~6000 to 1, and speed up compilation time for these icons.
         @OptIn(ExperimentalStdlibApi::class)
-        val backingPropertyName = "_" + iconName.decapitalize(Locale.ROOT)
+        val backingPropertyName = "_" + iconName.replaceFirstChar { it.lowercase() }
         val backingProperty = backingPropertySpec(name = backingPropertyName, ClassNames.ImageVector)
 
         val generation = FileSpec.builder(
@@ -102,6 +102,7 @@ class VectorAssetGenerator(
 
         return FunSpec.getterBuilder()
             .withBackingProperty(backingProperty) {
+                addAnnotation(AnnotationSpec.builder(ClassNames.Composable).build())
                 addCode(buildCodeBlock {
                     beginControlFlow(
                         "%N = %M$parameters.apply",
