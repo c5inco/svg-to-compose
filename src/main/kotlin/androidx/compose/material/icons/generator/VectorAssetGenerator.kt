@@ -42,7 +42,8 @@ data class VectorAssetGenerationResult(
 class VectorAssetGenerator(
     private val iconName: String,
     private val iconGroupPackage: String,
-    private val vector: Vector
+    private val vector: Vector,
+    private val compositionLocals: List<Pair<String, String>>,
 ) {
     /**
      * @return a [FileSpec] representing a Kotlin source file containing the property for this
@@ -60,6 +61,7 @@ class VectorAssetGenerator(
         val backingPropertyName = "_" + iconName.replaceFirstChar { it.lowercase() }
         val backingProperty = backingPropertySpec(name = backingPropertyName, ClassNames.ImageVector)
 
+        println(iconName)
         val generation = FileSpec.builder(
             packageName = iconGroupPackage,
             fileName = iconName
@@ -109,7 +111,7 @@ class VectorAssetGenerator(
                         backingProperty,
                         *members
                     )
-                    vector.nodes.forEach { node -> addRecursively(node) }
+                    vector.nodes.forEach { node -> addRecursively(node, compositionLocals) }
                     endControlFlow()
                     addStatement(".build()")
                 })
@@ -123,18 +125,21 @@ class VectorAssetGenerator(
 /**
  * Recursively adds function calls to construct the given [vectorNode] and its children.
  */
-private fun CodeBlock.Builder.addRecursively(vectorNode: VectorNode) {
+private fun CodeBlock.Builder.addRecursively(
+    vectorNode: VectorNode,
+    compositionLocals: List<Pair<String, String>>,
+) {
     when (vectorNode) {
         // TODO: b/147418351 - add clip-paths once they are supported
         is VectorNode.Group -> {
             beginControlFlow("%M", MemberNames.Group)
             vectorNode.paths.forEach { path ->
-                addRecursively(path)
+                addRecursively(path, compositionLocals)
             }
             endControlFlow()
         }
         is VectorNode.Path -> {
-            addPath(vectorNode) {
+            addPath(vectorNode, compositionLocals) {
                 vectorNode.nodes.forEach { pathNode ->
                     addStatement(pathNode.asFunctionCall())
                 }
@@ -149,14 +154,43 @@ private fun CodeBlock.Builder.addRecursively(vectorNode: VectorNode) {
  */
 private fun CodeBlock.Builder.addPath(
     path: VectorNode.Path,
+    compositionLocals: List<Pair<String, String>> = emptyList(),
     pathBody: CodeBlock.Builder.() -> Unit
 ) {
     val hasStrokeColor = path.strokeColorHex != null
+    var usesCompositionLocalFill = false
+    var usesCompositionLocalStroke = false
 
     val parameterList = with(path) {
         listOfNotNull(
-            "fill = ${getPathFill(path)}",
-            "stroke = ${if(hasStrokeColor) "%M(%M(0x$strokeColorHex))" else "null"}",
+            "fill = ${
+                if (compositionLocals.isNotEmpty()) {
+                    if (getCompositionLocalFill(path, compositionLocals) != null) {
+                        usesCompositionLocalFill = true
+                        getCompositionLocalFill(path, compositionLocals)
+                    } else {
+                        getPathFill(path)
+                    }
+                } else {
+                    getPathFill(path)
+                }
+            }",
+            "stroke = ${
+                if(hasStrokeColor) {
+                    if (compositionLocals.isNotEmpty()) {
+                        if (getCompositionLocalStroke(path, compositionLocals) != null) {
+                            usesCompositionLocalStroke = true
+                            getCompositionLocalStroke(path, compositionLocals)
+                        } else {
+                            "%M(%M(0x$strokeColorHex))"
+                        }
+                    } else {
+                        "%M(%M(0x$strokeColorHex))"
+                    }
+                } else {
+                    "null"
+                }
+            }",
             "fillAlpha = ${fillAlpha}f".takeIf { fillAlpha != 1f },
             "strokeAlpha = ${strokeAlpha}f".takeIf { strokeAlpha != 1f },
             "strokeLineWidth = ${strokeLineWidth.withMemberIfNotNull}",
@@ -172,7 +206,7 @@ private fun CodeBlock.Builder.addPath(
     val members: Array<Any> = listOfNotNull(
         MemberNames.Path,
         MemberNames.SolidColor.takeIf { hasStrokeColor },
-        MemberNames.Color.takeIf { hasStrokeColor },
+        MemberNames.Color.takeIf { hasStrokeColor && !usesCompositionLocalStroke },
         path.strokeLineWidth.memberName,
         path.strokeLineCap.memberName,
         path.strokeLineJoin.memberName,
@@ -182,7 +216,9 @@ private fun CodeBlock.Builder.addPath(
         when (path.fill){
             is Fill.Color -> {
                 add(fillIndex, MemberNames.SolidColor)
-                add(++fillIndex, MemberNames.Color)
+                if (!usesCompositionLocalFill) {
+                    add(++fillIndex, MemberNames.Color)
+                }
             }
             is Fill.LinearGradient -> {
                 add(fillIndex, MemberNames.LinearGradient)
@@ -238,6 +274,55 @@ private fun getGradientStops(
     stops: List<Pair<Float, String>>
 ) = stops.map { stop ->
     "${stop.first}f to %M(0x${stop.second})"
+}
+
+private fun getCompositionLocalFill (
+    path: VectorNode.Path,
+    compositionLocals: List<Pair<String, String>>
+) = when (path.fill){
+    is Fill.Color -> {
+        var localFound = false
+        var newColorHex = path.fill.colorHex
+
+        compositionLocals.forEach {
+            if (!localFound) {
+                if (it.first == newColorHex) {
+                    newColorHex = it.second
+                    localFound = true
+                }
+            }
+        }
+
+        if (localFound) {
+            "%M($newColorHex)"
+        } else {
+            null
+        }
+    }
+    else -> null
+}
+
+private fun getCompositionLocalStroke (
+    path: VectorNode.Path,
+    compositionLocals: List<Pair<String, String>>
+) = path.strokeColorHex.let { colorHex ->
+    var localFound = false
+    var newColorHex = colorHex
+
+    compositionLocals.forEach {
+        if (!localFound) {
+            if (it.first == newColorHex) {
+                newColorHex = it.second
+                localFound = true
+            }
+        }
+    }
+
+    if (localFound) {
+        "%M($newColorHex)"
+    } else {
+        null
+    }
 }
 
 private fun CodeBlock.Builder.addLinearGradient(

@@ -6,24 +6,23 @@ fun main() {
     val iconTest = File("src/test/assets")
     val src = File("build/generated-icons").apply { mkdirs() }
 
+    val localsGroup = "IntelliJTheme.iconColors"
+    val intellijColorLocals = listOf(
+        Pair("FF6C707E", "$localsGroup.generalStroke"),
+        Pair("FFEBECF0", "$localsGroup.generalFill"),
+        Pair("FF4682FA", "$localsGroup.blueSolid"),
+    )
+
     Svg2Compose.parse(
         applicationIconPackage = "org.jetbrains.jewel.icons",
         accessorName = "AllIcons",
         outputSourceDirectory = src,
         vectorsDirectory = iconTest,
-        iconNameTransformer = { name, group ->
-            name.removePrefix(group)
+        compositionLocals = intellijColorLocals,
+        fileFilter = { !it.nameWithoutExtension.contains("_dark") },
+        iconNameTransformer = { name, _ ->
+            name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
         },
         type = VectorType.SVG
     )
-}
-
-private fun String.removeSuffix(suffix: String, ignoreCase: Boolean): String {
-    return if (ignoreCase) {
-        val index = lastIndexOf(suffix, ignoreCase = true)
-
-        if (index > -1) substring(0, index) else this
-    } else {
-        removeSuffix(suffix)
-    }
 }

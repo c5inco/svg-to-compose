@@ -45,6 +45,7 @@ class IconWriter(
      */
     fun generateTo(
         outputSrcDirectory: File,
+        compositionLocals: List<Pair<String, String>> = emptyList(),
         iconNamePredicate: (String) -> Boolean
     ): List<MemberName> {
 
@@ -60,7 +61,8 @@ class IconWriter(
             val (fileSpec, accessProperty) = VectorAssetGenerator(
                 iconName,
                 groupPackage,
-                vector
+                vector,
+                compositionLocals
             ).createFileSpec(groupClass)
 
             fileSpec.writeTo(outputSrcDirectory)

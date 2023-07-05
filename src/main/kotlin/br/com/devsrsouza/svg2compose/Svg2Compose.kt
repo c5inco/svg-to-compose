@@ -25,9 +25,11 @@ object Svg2Compose {
         accessorName: String,
         outputSourceDirectory: File,
         vectorsDirectory: File,
+        compositionLocals: List<Pair<String, String>> = emptyList(),
         type: VectorType = VectorType.SVG,
+        fileFilter: (File) -> Boolean = { _ -> true },
         iconNameTransformer: IconNameTransformer = { it, _ -> it.toKotlinPropertyName() },
-        allAssetsPropertyName: String = "AllAssets"
+        allAssetsPropertyName: String = "AllAssets",
     ): ParsingResult {
         fun nameRelative(vectorFile: File) = vectorFile.relativeTo(vectorsDirectory).path
 
@@ -41,6 +43,7 @@ object Svg2Compose {
                 val dirIcons = file.listFiles()
                     .filter { it.isDirectory.not() }
                     .filter { it.extension.equals(type.extension, ignoreCase = true) }
+                    .filter { fileFilter(it) }
 
                 val previousGroup = groupStack.peekOrNull()
 
@@ -89,7 +92,7 @@ object Svg2Compose {
                             iconsPackage,
                         )
 
-                        val memberNames = writer.generateTo(outputSourceDirectory) { true }
+                        val memberNames = writer.generateTo(outputSourceDirectory, compositionLocals) { true }
 
                         icons.mapValues { entry ->
                             memberNames.first { it.simpleName == entry.value.kotlinName }
