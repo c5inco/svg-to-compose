@@ -36,7 +36,7 @@ class ThemedVectorAssetGenerator(
         val backingProperty = backingPropertySpec(name = backingPropertyName, IconsClassNames.IntellijIconData)
 
         val composable = FunSpec.builder(name = "${iconName}Composable")
-            .addParameter("colorScheme", IconsClassNames.ColorScheme)
+            .addParameter("colorScheme", IconsClassNames.IntellijIconColors)
             .addModifiers(KModifier.PRIVATE)
             .returns(ClassNames.ImageVector)
             .addCode(iconBuilder(backingProperty))
@@ -60,55 +60,9 @@ class ThemedVectorAssetGenerator(
             backingProperty
         ).addFunction(
             composable
-        ).addImport(
-            IconsClassNames.IntellijIconData.packageName, IconsClassNames.IntellijIconData.simpleName
-//        ).addImport(
-//            "org.jetbrains.jewel", "IntelliJTheme" // TODO: Clean up
         ).setIndent().build()
 
         return VectorAssetGenerationResult(generation, iconName)
-    }
-
-    /**
-     * @return the body of the getter for the icon property. This getter returns the backing
-     * property if it is not null, otherwise creates the icon and 'caches' it in the backing
-     * property, and then returns the backing property.
-     */
-    private fun iconGetter(backingProperty: PropertySpec): FunSpec {
-
-        val parameterList = with(vector) {
-            listOfNotNull(
-                "name = \"${iconName}\"",
-                "defaultWidth = ${width.withMemberIfNotNull}",
-                "defaultHeight = ${height.withMemberIfNotNull}",
-                "viewportWidth = ${viewportWidth}f",
-                "viewportHeight = ${viewportHeight}f"
-            )
-        }
-
-        val parameters = parameterList.joinToString(prefix = "(", postfix = ")")
-
-        val members: Array<Any> = listOfNotNull(
-            MemberNames.ImageVectorBuilder,
-            vector.width.memberName,
-            vector.height.memberName
-        ).toTypedArray()
-
-        return FunSpec.getterBuilder()
-            .withBackingProperty(backingProperty) {
-                addAnnotation(AnnotationSpec.builder(ClassNames.Composable).build())
-                addCode(buildCodeBlock {
-                    beginControlFlow(
-                        "%N = %M$parameters.apply",
-                        backingProperty,
-                        *members
-                    )
-                    vector.nodes.forEach { node -> addRecursively(node, compositionLocals) }
-                    endControlFlow()
-                    addStatement(".build()")
-                })
-            }
-            .build()
     }
 
     private fun iconBuilder(backingProperty: PropertySpec): CodeBlock {
@@ -314,7 +268,7 @@ private fun getCompositionLocalFill (
         }
 
         if (localFound) {
-            "%M($newColorHex)"
+            "%M(colorScheme.$newColorHex)"
         } else {
             null
         }
@@ -339,7 +293,7 @@ private fun getCompositionLocalStroke (
     }
 
     if (localFound) {
-        "%M($newColorHex)"
+        "%M(colorScheme.$newColorHex)"
     } else {
         null
     }

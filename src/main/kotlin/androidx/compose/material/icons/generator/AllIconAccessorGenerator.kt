@@ -5,6 +5,7 @@ import androidx.compose.material.icons.generator.util.withBackingProperty
 import br.com.devsrsouza.svg2compose.GeneratedGroup
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import des.c5inco.svg2compose.IconsClassNames
 
 class AllIconAccessorGenerator(
     private val iconProperties: Collection<MemberName>,
@@ -19,7 +20,7 @@ class AllIconAccessorGenerator(
         // preventing that a asset has the name List and conflict with Kotlin List import
         fileSpec.addAliasedImport(list, "____KtList")
 
-        val allIconsType = list.parameterizedBy(ClassNames.ImageVector)
+        val allIconsType = list.parameterizedBy(IconsClassNames.IntellijIconData)
         val allIconsBackingProperty = backingPropertySpec("__$allAssetsPropertyName", allIconsType)
 
         // preventing import conflict when different groups has the same asset name.

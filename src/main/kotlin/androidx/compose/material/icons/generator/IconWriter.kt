@@ -19,6 +19,7 @@ package androidx.compose.material.icons.generator
 import br.com.devsrsouza.svg2compose.IconNameTransformer
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
+import des.c5inco.svg2compose.ThemedVectorAssetGenerator
 import java.io.File
 
 typealias IconGroup = String
@@ -56,9 +57,10 @@ class IconWriter(
         }.map { icon ->
             val iconName = icon.kotlinName
 
+            println(iconName)
             val vector = IconParser(icon).parse()
 
-            val (fileSpec, accessProperty) = VectorAssetGenerator(
+            val (fileSpec, accessProperty) = ThemedVectorAssetGenerator(
                 iconName,
                 groupPackage,
                 vector,

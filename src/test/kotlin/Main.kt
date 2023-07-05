@@ -1,16 +1,16 @@
 package br.com.devsrsouza.svg2compose
 
+import androidx.compose.material.icons.generator.IconWriter
 import java.io.File
 
 fun main() {
     val iconTest = File("src/test/assets")
     val src = File("build/generated-icons").apply { mkdirs() }
 
-    val localsGroup = "IntelliJTheme.iconColors"
     val intellijColorLocals = listOf(
-        Pair("FF6C707E", "$localsGroup.generalStroke"),
-        Pair("FFEBECF0", "$localsGroup.generalFill"),
-        Pair("FF4682FA", "$localsGroup.blueSolid"),
+        Pair("FF6C707E", "generalStroke"),
+        Pair("FFEBECF0", "generalFill"),
+        Pair("FF4682FA", "blueSolid"),
     )
 
     Svg2Compose.parse(
