@@ -72,6 +72,8 @@ class VectorAssetGenerator(
                 .build()
         ).addProperty(
             backingProperty
+        ).addImport(
+            "org.jetbrains.jewel", "IntelliJTheme" // TODO: Clean up
         ).setIndent().build()
 
         return VectorAssetGenerationResult(generation, iconName)
