@@ -5,6 +5,8 @@ import com.android.ide.common.vectordrawable.Svg2Vector
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.MemberName
+import des.c5inco.svg2compose.ThemedAllIconAccessorGenerator
+import des.c5inco.svg2compose.ThemedIconWriter
 import java.io.File
 import java.util.*
 
@@ -86,7 +88,7 @@ object Svg2Compose {
                             )
                         }
 
-                        val writer = IconWriter(
+                        val writer = ThemedIconWriter(
                             icons.values,
                             groupClassName,
                             iconsPackage,
@@ -125,7 +127,7 @@ object Svg2Compose {
                 else
                     groupStack.peek()
 
-                val allAssetsGenerator = AllIconAccessorGenerator(
+                val allAssetsGenerator = ThemedAllIconAccessorGenerator(
                     group.generatedIconsMemberNames.values,
                     group.groupClass,
                     allAssetsPropertyName,
