@@ -21,7 +21,9 @@ fun main() {
         compositionLocals = intellijColorLocals,
         fileFilter = { !it.nameWithoutExtension.contains("_dark") },
         iconNameTransformer = { name, _ ->
-            name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            name
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                .replace("@", "_")
         },
         type = VectorType.SVG
     )
