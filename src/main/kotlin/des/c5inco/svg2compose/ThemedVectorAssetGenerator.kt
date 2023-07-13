@@ -52,7 +52,11 @@ class ThemedVectorAssetGenerator(
                 .getter(
                     FunSpec.getterBuilder()
                         .withBackingProperty(backingProperty) {
-                            addStatement("%N = %T(imageVector = { %N(it) })", backingProperty, IconsClassNames.IntellijIconData, composable)
+                            addStatement("%N = %T(" +
+                                    "name = %S," +
+                                    "size = %T(height = %L.%M, width = %L.%M)," +
+                                    "imageVector = { %N(it) }" +
+                                    ")", backingProperty, IconsClassNames.IntellijIconData, iconName, IconsClassNames.DpSize, vector.height.value, IconsClassNames.Dp, vector.width.value, IconsClassNames.Dp, composable)
                         }.build()
                 )
                 .build()
